@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+    <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+    <title>전문연구요원 복무 현황</title>
+  </head>
+  <body>
+    <button id="button-file1">출퇴근기록 파일 선택</button>
+    <p id="p-file1">선택된 파일 없음</p>
+
+    <button id="button-file2">연명부 파일 선택</button>
+    <p id="p-file2">선택된 파일 없음</p>
+
+    <button id="button-dir">결과 저장 폴더 선택</button>
+    <p id="p-dir">선택된 폴더 없음</p>
+
+    <button id="button-run">처리 시작</button>
+
+    <!-- You can also require other files to run in this process -->
+    <script src="./renderer.js"></script>
+  </body>
+</html>

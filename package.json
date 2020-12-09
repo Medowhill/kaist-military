@@ -1,0 +1,22 @@
+{
+  "name": "kaist-mil",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "build": {
+    "productName": "kaist-mil",
+    "appId": "kaist-mil"
+  },
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder build --win portable"
+  },
+  "devDependencies": {
+    "electron": "^11.0.4",
+    "electron-builder": "^22.9.1"
+  },
+  "dependencies": {
+    "xlsx": "^0.16.9",
+    "xlsx-style": "^0.8.13"
+  }
+}
