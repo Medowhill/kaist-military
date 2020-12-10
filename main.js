@@ -60,6 +60,12 @@ ipcMain.on('asynchronous-message', (event, arg) => {
       const perDept = groupBy(students, s => s.dept);
       
       const date = students.map(s => s.date).find(d => d);
+      const y = Number(date.substring(0, 4));
+      const m = Number(date.substring(5, 7)) - 1;
+      const d = Number(date.substring(8, 10));
+      const dateObj = new Date();
+      dateObj.setFullYear(y, m, d);
+      const dateStr = `${date}(${dayName(dateObj)})`;
       for (const [dept, students] of perDept) {
         function getAbsent(desc, reason) {
           return [
@@ -69,7 +75,7 @@ ipcMain.on('asynchronous-message', (event, arg) => {
         }
         const title1 = '복무현황';
         const data1 = [
-          [`${date} ${dept} ${title1}`],
+          [`${dateStr} ${dept} ${title1}`],
           [],
           ['복무구분', '인원(명)'],
           ['정상출근', students.filter(s => !s.isLate && !s.isAbsent).length],
@@ -87,7 +93,7 @@ ipcMain.on('asynchronous-message', (event, arg) => {
       
         const title2 = '지각자현황';
         const header = [
-          [`${date} ${dept} ${title2}`],
+          [`${dateStr} ${dept} ${title2}`],
           [],
           ['학과', '학번', '성명', '지각패널티', '누적복무연장']
         ];
@@ -97,7 +103,8 @@ ipcMain.on('asynchronous-message', (event, arg) => {
         const ws1 = arrayToSheet(data1, true);
         const ws2 = arrayToSheet(data2);
         const wb = sheetsToBook([[title1, ws1], [title2, ws2]]);
-        xlsxs.writeFile(wb, path.join(dir, `${date} ${dept}.xlsx`), { bookType: 'xlsx' });
+        console.log(wb);
+        xlsxs.writeFile(wb, path.join(dir, `${dateStr} ${dept}.xlsx`), { bookType: 'xlsx' });
       }
       break;
   }
@@ -136,6 +143,18 @@ function numToTime(num) {
     return (s < 10) ? `0${s}` : s.toString();
   }
   return `${twoDigits(h)}:${twoDigits(m)}`;
+}
+
+function dayName(date) {
+  switch (date.getDay()) {
+    case 0: return '일';
+    case 1: return '월';
+    case 2: return '화';
+    case 3: return '수';
+    case 4: return '목';
+    case 5: return '금';
+    case 6: return '토';
+  }
 }
 
 class Student {
@@ -206,15 +225,25 @@ function getRows(fn) {
   return xlsx.utils.sheet_to_json(ws);
 }
 
+function widthOf(str) {
+  let w = 0;
+  for (const i in str) {
+    let code = str.charCodeAt(i);
+    w += (0xac00 <= code && code <= 0xd7af) ? 2 : 1;
+  }
+  return w;
+}
+
 function arrayToSheet(arr, footer) {
   const ws = {};
-  const range = { s: { c: 100000, r: 100000 }, e: { c: 0, r: 0 } };
-  for (let r = 0; r < arr.length; r++) {
+  const R = arr.length;
+  const C = arr.map(a => a.length).reduce((a, b) => (a > b) ? a : b, 0);
+  const range = { s: { c: 0, r: 0 }, e: { c: C - 1, r: R - 1 } };
+  const widths = Array(C);
+  widths.fill(10);
+
+  for (let r = 0; r < R; r++) {
     for (let c = 0; c < arr[r].length; c++) {
-      if (range.s.r > r) range.s.r = r;
-      if (range.s.c > c) range.s.c = c;
-      if (range.e.r < r) range.e.r = r;
-      if (range.e.c < c) range.e.c = c;
       const cell = { v: arr[r][c] };
       cell.t = (typeof(cell.v) === 'number') ? 'n' : 's';
       if (r === 0)
@@ -223,18 +252,23 @@ function arrayToSheet(arr, footer) {
         cell.s = { font: { bold: true }, fill: { patternType: 'solid', fgColor: { rgb: "FFD0D0D0" } } };
       else
         cell.s = {};
-      if (r !== 0)
+      if (r !== 0) {
         cell.s.border = {
           top: { style: "thin", color: { rgb: "FF000000" } },
           bottom: { style: "thin", color: { rgb: "FF000000" } },
           left: { style: "thin", color: { rgb: "FF000000" } },
           right: { style: "thin", color: { rgb: "FF000000" } }
         };
+        const w = widthOf(cell.v.toString());
+        if (w > widths[c]) widths[c] = w;
+      }
       const ref = xlsxs.utils.encode_cell({ r, c });
       ws[ref] = cell;
     }
   }
   ws['!ref'] = xlsxs.utils.encode_range(range);
+  ws['!cols'] = widths.map(w => { return { wch: w }; });
+  ws['!merges'] = [ { s: { c: 0, r: 0 }, e: { c: 4, r: 0 } } ];
   return ws;
 }
 
