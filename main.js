@@ -97,13 +97,15 @@ ipcMain.on('asynchronous-message', (event, arg) => {
           [],
           ['학과', '학번', '성명', '지각패널티', '누적복무연장']
         ];
-        const info = students.filter(s => s.isLate).map(s => s.info());
+        const info = students
+          .filter(s => s.isLate)
+          .sort((a, b) => a.id - b.id)
+          .map(s => s.info());
         const data2 = header.concat(info);
 
         const ws1 = arrayToSheet(data1, true);
         const ws2 = arrayToSheet(data2);
         const wb = sheetsToBook([[title1, ws1], [title2, ws2]]);
-        console.log(wb);
         xlsxs.writeFile(wb, path.join(dir, `${dateStr} ${dept}.xlsx`), { bookType: 'xlsx' });
       }
       break;
